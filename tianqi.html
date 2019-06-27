@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <title>地图-更新天气</title>
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+
+        #l-map {
+            width: 955px;
+            height: 650px;
+            overflow: hidden;
+        }
+
+        #r-result {
+            width: 100%;
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        .anchorBL {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <select onchange="getWeather()" id="weather">
+        <option value="济南">济南</option>
+        <option value="青岛">青岛</option>
+        <option value="烟台">烟台</option>
+        <option value="潍坊">潍坊</option>
+    </select>
+    <div id="l-map"></div>
+</body>
+
+</html>
+<script src="./jquery-1.11.3.js"></script>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=Sgn2DCLbBHTob2GlyWLatrw0QGgeOUYF"></script>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map;
+    var province = "山东省";
+    var myGeo = new BMap.Geocoder();
+    var citys = [];
+    var key = "2b98fbf9feab4ccb9c5559d2c05e8de4";
+    function initMap() {
+        createMap();//创建地图
+        setMapEvent();//设置地图事件
+        addMapControl();//向地图添加控件
+        getBoundary();
+        getCityByProvince();
+        getWeather();
+    }
+    // 百度地图API功能
+    function createMap() {
+        map = new BMap.Map("l-map");
+        map.centerAndZoom(new BMap.Point(117.024967, 36.682785), 6);
+        map.enableScrollWheelZoom(true);
+        map.addEventListener("click", function (e) {
+            var pt = e.point;
+            myGeo.getLocation(pt, function (rs) {
+                var addComp = rs.addressComponents;
+                province = addComp.province;
+                getBoundary();
+            });
+        });
+    }
+    function setMapEvent() {
+        map.enableScrollWheelZoom();
+        map.enableKeyboard();
+        map.enableDragging();
+        map.enableDoubleClickZoom()
+    }
+    function addMapControl() {
+        var scaleControl = new BMap.ScaleControl({ anchor: BMAP_ANCHOR_BOTTOM_LEFT });
+        scaleControl.setUnit(BMAP_UNIT_IMPERIAL);
+        map.addControl(scaleControl);
+        var navControl = new BMap.NavigationControl({ anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_LARGE });
+        map.addControl(navControl);
+    }
+    function getBoundary() {
+        var bdary = new BMap.Boundary();
+        bdary.get(province, function (rs) { //获取行政区域
+            map.clearOverlays(); //清除地图覆盖物
+            var count = rs.boundaries.length; //行政区域的点有多少个
+            if (count === 0) {
+                alert('未能获取当前输入行政区域');
+                return;
+            }
+            var pointArray = [];
+            for (var i = 0; i < count; i++) {
+                var ply = new BMap.Polygon(rs.boundaries[i], { strokeWeight: 2, strokeColor: "#ff0000" }); //建立多边形覆盖物
+                map.addOverlay(ply); //添加覆盖物
+                pointArray = pointArray.concat(ply.getPath());
+            }
+            // map.setViewport(pointArray); //调整视野          
+        });
+    }
+    function getCityByProvince(province) {
+        var city = [
+            {
+                id: "1",
+                cityName: '济南',
+            },
+            {
+                id: "2",
+                cityName: '青岛'
+            },
+            {
+                id: "3",
+                cityName: '烟台'
+            },
+            {
+                id: "4",
+                cityName: '潍坊'
+            }
+        ]
+        citys = city;
+    };
+    function getWeather() {
+        var cityName = $('#weather option:selected').val();
+        console.log(cityName);
+        $.ajax({
+            url: `https://free-api.heweather.com/v5/now?city=${cityName}&key=2b98fbf9feab4ccb9c5559d2c05e8de4`,
+            success: function (result) {
+                console.log(result);
+            }
+        });
+    }
+    function getPrices() {
+
+    }
+    initMap();
+</script>
